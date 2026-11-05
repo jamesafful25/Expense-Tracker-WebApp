@@ -302,19 +302,13 @@ resource "aws_ecs_task_definition" "backend" {
           name      = "DB_PASSWORD"
           valueFrom = "${var.db_app_secret_arn}:password::"
         },
+
         {
           name      = "JWT_SECRET"
           valueFrom = "${var.app_secrets_arn}:JWT_SECRET::"
-        },
-        {
-          name      = "GOOGLE_CLIENT_ID"
-          valueFrom = "${var.app_secrets_arn}:GOOGLE_CLIENT_ID::"
-        },
-        {
-          name      = "GOOGLE_CLIENT_SECRET"
-          valueFrom = "${var.app_secrets_arn}:GOOGLE_CLIENT_SECRET::"
         }
       ]
+
 
       logConfiguration = {
         logDriver = "awslogs"

@@ -125,10 +125,12 @@ module "ecs" {
 module "iam_github_oidc" {
   source = "../../modules/iam-github-oidc"
 
-  project_name      = var.project_name
-  environment       = var.environment
-  github_repository = "jamesafful25/Expense-Tracker-WebApp"
-  github_branch     = "main"
+  project_name         = var.project_name
+  environment          = var.environment
+  github_repository    = "jamesafful25/Expense-Tracker-WebApp"
+  github_owner_id      = "153740580"
+  github_repository_id = "1445312232"
+  github_branch        = "main"
 
   frontend_bucket_name       = module.frontend.frontend_bucket_id
   cloudfront_distribution_id = module.cloudfront.cloudfront_distribution_id

@@ -36,7 +36,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # STEP 1: Get the repository source code
+
+      # STEP 1: Get repository source code
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -54,17 +55,41 @@ jobs:
 
       # STEP 4: Build and push the backend image
       - name: Build and Push Docker Image
+        id: build-image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          docker build \
-            -t "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" \
-            -t "$ECR_REGISTRY/$ECR_REPOSITORY:latest" \
-            ./backend
+          IMAGE_URI="$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
 
-          docker push "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
-          docker push "$ECR_REGISTRY/$ECR_REPOSITORY:latest"
+          echo "Checking whether the image already exists in ECR..."
+
+          if aws ecr describe-images \
+            --repository-name "$ECR_REPOSITORY" \
+            --image-ids imageTag="$IMAGE_TAG" \
+            >/dev/null 2>ecr-check-error.log; then
+
+            echo "Image already exists. Reusing: $IMAGE_URI"
+
+          elif grep -q "ImageNotFoundException" ecr-check-error.log; then
+
+            echo "Image does not exist. Building and pushing: $IMAGE_URI"
+
+            docker build \
+              -t "$IMAGE_URI" \
+              ./backend
+
+            docker push "$IMAGE_URI"
+
+          else
+
+            echo "Unable to check the ECR image."
+            cat ecr-check-error.log
+            exit 1
+
+          fi
+
+          echo "image_uri=$IMAGE_URI" >> "$GITHUB_OUTPUT"
 
       # STEP 5: Download the existing migration task definition
       - name: Download Current Migration Task Definition
@@ -74,10 +99,10 @@ jobs:
             --query taskDefinition \
             --output json > migration-task-definition.json
 
-      # STEP 6: Replace the migration container image with this commit's image
+      # STEP 6: Update migration container image
       - name: Update Migration Container Image
         env:
-          IMAGE_URI: ${{ steps.login-ecr.outputs.registry }}/expense-tracker-dev-backend:${{ github.sha }}
+          IMAGE_URI: ${{ steps.build-image.outputs.image_uri }}
         run: |
           jq --arg IMAGE "$IMAGE_URI" \
              --arg CONTAINER "$MIGRATION_CONTAINER_NAME" '
@@ -107,7 +132,7 @@ jobs:
             --query 'taskDefinition.taskDefinitionArn' \
             --output text > migration-task-definition-arn.txt
 
-      # STEP 8: Retrieve the backend service's existing network configuration
+      # STEP 8: Retrieve backend service network configuration
       - name: Get ECS Service Network Configuration
         run: |
           aws ecs describe-services \
@@ -118,7 +143,7 @@ jobs:
 
           jq -e '.subnets and .securityGroups' service-network.json > /dev/null
 
-      # STEP 9: Build the migration task launch configuration
+      # STEP 9: Prepare migration task configuration
       - name: Prepare Migration Task Configuration
         run: |
           MIGRATION_TASK_ARN=$(cat migration-task-definition-arn.txt)
@@ -139,7 +164,7 @@ jobs:
             }
           ' > run-migration-task.json
 
-      # STEP 10: Start the database migration task
+      # STEP 10: Start database migration task
       - name: Run Database Migration Task
         run: |
           aws ecs run-task \
@@ -157,7 +182,7 @@ jobs:
           echo "Migration task started: $TASK_ARN"
           echo "$TASK_ARN" > migration-task-arn.txt
 
-      # STEP 11: Wait for the migration task to stop
+      # STEP 11: Wait for migration task to stop
       - name: Wait for Database Migration
         run: |
           TASK_ARN=$(cat migration-task-arn.txt)
@@ -166,7 +191,7 @@ jobs:
             --cluster "$ECS_CLUSTER" \
             --tasks "$TASK_ARN"
 
-      # STEP 12: Check whether database migration succeeded
+      # STEP 12: Verify database migration
       - name: Verify Database Migration
         run: |
           TASK_ARN=$(cat migration-task-arn.txt)
@@ -208,7 +233,7 @@ jobs:
 
           echo "Database migration completed successfully."
 
-      # STEP 13: Download the current backend task definition
+      # STEP 13: Download current backend task definition
       - name: Download Current ECS Task Definition
         run: |
           aws ecs describe-task-definition \
@@ -216,10 +241,10 @@ jobs:
             --query taskDefinition \
             --output json > task-definition.json
 
-      # STEP 14: Replace the backend container image
+      # STEP 14: Update backend container image
       - name: Update Container Image in Task Definition
         env:
-          IMAGE_URI: ${{ steps.login-ecr.outputs.registry }}/expense-tracker-dev-backend:${{ github.sha }}
+          IMAGE_URI: ${{ steps.build-image.outputs.image_uri }}
         run: |
           jq --arg IMAGE "$IMAGE_URI" \
              --arg CONTAINER "$CONTAINER_NAME" '
@@ -241,7 +266,7 @@ jobs:
               )
           ' task-definition.json > new-task-definition.json
 
-      # STEP 15: Register the new backend task definition
+      # STEP 15: Register new backend task definition
       - name: Register New ECS Task Definition
         run: |
           aws ecs register-task-definition \
@@ -249,7 +274,7 @@ jobs:
             --query 'taskDefinition.taskDefinitionArn' \
             --output text > task-definition-arn.txt
 
-      # STEP 16: Update the running ECS backend service
+      # STEP 16: Update running ECS backend service
       - name: Update ECS Service
         run: |
           TASK_DEFINITION_ARN=$(cat task-definition-arn.txt)
@@ -259,8 +284,7 @@ jobs:
             --service "$ECS_SERVICE" \
             --task-definition "$TASK_DEFINITION_ARN"
 
-
-      # STEP 17: Wait for ECS deployment to stabilize
+      # STEP 17: Wait for ECS deployment stability
       - name: Wait for ECS Service Stability
         run: |
           TASK_DEFINITION_ARN=$(cat task-definition-arn.txt)
@@ -270,6 +294,7 @@ jobs:
           echo "Waiting for ECS deployment to stabilize..."
 
           for attempt in $(seq 1 "$MAX_ATTEMPTS"); do
+
             aws ecs describe-services \
               --cluster "$ECS_CLUSTER" \
               --services "$ECS_SERVICE" \
@@ -279,9 +304,11 @@ jobs:
             DESIRED_COUNT=$(jq -r '.services[0].desiredCount // 0' ecs-service-status.json)
             RUNNING_COUNT=$(jq -r '.services[0].runningCount // 0' ecs-service-status.json)
             PENDING_COUNT=$(jq -r '.services[0].pendingCount // 0' ecs-service-status.json)
+
             PRIMARY_STATUS=$(jq -r '
               [.services[0].deployments[] | select(.status == "PRIMARY")][0].rolloutState // "UNKNOWN"
             ' ecs-service-status.json)
+
             CURRENT_TASK_DEFINITION=$(jq -r '.services[0].taskDefinition // "UNKNOWN"' ecs-service-status.json)
 
             echo "Attempt $attempt/$MAX_ATTEMPTS"
@@ -308,6 +335,7 @@ jobs:
             fi
 
             sleep "$WAIT_SECONDS"
+
           done
 
           echo "ECS deployment did not stabilize."
@@ -326,7 +354,7 @@ jobs:
 
           exit 1
 
-      # STEP 18: Verify that the backend target is healthy in the ALB
+      # STEP 18: Verify backend target health in ALB
       - name: Verify ALB Target Health
         run: |
           TARGET_GROUP_ARN=$(aws elbv2 describe-target-groups \
@@ -342,6 +370,7 @@ jobs:
           echo "Checking ALB target health..."
 
           for attempt in $(seq 1 40); do
+
             aws elbv2 describe-target-health \
               --target-group-arn "$TARGET_GROUP_ARN" \
               --output json > target-health.json
@@ -366,6 +395,7 @@ jobs:
 
             echo "Waiting for healthy ALB targets ($attempt/40)..."
             sleep 15
+
           done
 
           echo "ALB target health verification failed."
@@ -377,7 +407,7 @@ jobs:
 
           exit 1
 
-      # STEP 19: Display the final ECS service status
+      # STEP 19: Display final ECS service status
       - name: Verify ECS Service Update
         run: |
           aws ecs describe-services \
