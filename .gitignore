@@ -1,0 +1,45 @@
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Node.js dependencies
+node_modules/
+
+# Frontend build output
+dist/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Backend uploaded files
+/backend/uploads
+
+# Generated reports
+/backend/reports
+/backend/utils/reports/*.pdf
+/backend/utils/reports/*.xlsx
+
+# Terraform working directories
+**/.terraform/
+
+# Terraform state files
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+
+# Terraform plans
+*.tfplan
+*.plan
+
+# Terraform crash logs
+crash.log
+crash.*.log
+
+# Local IDE and operating system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,25 @@
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Node.js dependencies
+node_modules/
+
+# Uploaded files
+uploads/
+
+# Logs
+*.log
+logs/
+
+# Git files
+.git/
+.gitignore
+
+# Development and temporary files
+coverage/
+.nyc_output/
+.DS_Store
+Thumbs.db

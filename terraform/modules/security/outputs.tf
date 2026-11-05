@@ -1,0 +1,15 @@
+
+output "alb_security_group_id" {
+  description = "Security group ID for the Application Load Balancer"
+  value       = aws_security_group.alb.id
+}
+
+output "ecs_security_group_id" {
+  description = "Security group ID for the ECS backend service"
+  value       = aws_security_group.ecs.id
+}
+
+output "rds_security_group_id" {
+  description = "Security group ID for the RDS MySQL database"
+  value       = aws_security_group.rds.id
+}
