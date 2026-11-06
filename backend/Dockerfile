@@ -14,11 +14,14 @@ RUN npm ci --omit=dev
 # 5. Copy application source code
 COPY . .
 
-# 6. Create a non-root user for security
+# 6. Create reports directory and grant write access to node user
+RUN mkdir -p /app/utils/reports \
+    && chown -R node:node /app/utils/reports
+# 7. Run application as non-root user
 USER node
 
-# 7. Document the application port
+# 8. Document the application port
 EXPOSE 5000
 
-# 8. Start the backend application
+# 9. Start the backend application
 CMD ["npm", "start"]
