@@ -100,7 +100,73 @@ expense_tracker_app/
     ├── tailwind.config.js
     └── postcss.config.js
 ```
+## Application Screenshots
 
+### Login
+![Expense Tracker Login](docs/screenshots/application/login.png)
+
+### Dashboard
+![Expense Tracker Dashboard](docs/screenshots/application/dashboard.png)
+
+### Profile
+![Expense Tracker Profile](docs/screenshots/application/profile.png)
+
+### Reports
+![Expense Tracker Reports](docs/screenshots/application/report.png)
+
+---
+
+## AWS Infrastructure and Deployment
+
+The following screenshots document the AWS infrastructure used during the application's deployment. **This AWS environment has since been decommissioned.**
+
+<details>
+<summary>View AWS infrastructure screenshots</summary>
+
+### Virtual Private Cloud (VPC)
+![AWS VPC](docs/screenshots/aws/vpc.png)
+
+![AWS VPC Configuration](docs/screenshots/aws/vpc-1.png)
+
+### Elastic Container Service (ECS)
+![AWS ECS](docs/screenshots/aws/ecs.png)
+
+![AWS ECS Configuration](docs/screenshots/aws/ecs-1.png)
+
+### Relational Database Service (RDS)
+![AWS RDS](docs/screenshots/aws/rds.png)
+
+### CloudFront
+![AWS CloudFront](docs/screenshots/aws/cloudfront.png)
+
+### CloudWatch
+![AWS CloudWatch](docs/screenshots/aws/cloudwatch.png)
+
+![AWS CloudWatch ALB](docs/screenshots/aws/cloudwatch-abl.png)
+
+![AWS CloudWatch RDS 1](docs/screenshots/aws/cloudwatch-rds-1.png)
+
+![AWS CloudWatch RDS 2](docs/screenshots/aws/cloudwatch-rds-2.png)
+
+![AWS CloudWatch RDS 3](docs/screenshots/aws/cloudwatch-rds-3.png)
+
+### Secrets Manager
+![AWS Secrets Manager](docs/screenshots/aws/secretmanager.png)
+
+</details>
+
+---
+
+## CI/CD Pipeline
+
+### Deployment Workflow
+![GitHub Actions Deployment Workflow](docs/screenshots/cicd/deployment-workflow.png)
+
+### Backend Deployment
+![Backend GitHub Actions Success](docs/screenshots/cicd/github-actions-success-backend.png)
+
+### Frontend Deployment
+![Frontend GitHub Actions Success](docs/screenshots/cicd/github-actions-success-frontend.png)
 ---
 
 ## Getting Started
