@@ -4,7 +4,7 @@ A full-stack expense tracking application with a Node.js/Express backend and Rea
 
 ---
 
-## 📁 Project Structure
+##  Project Structure
 
 ```
 expense_tracker_app/
