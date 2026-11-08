@@ -1,8 +1,6 @@
 #  Expense Tracker App
 
-Infrastructure, Cloud Architecture and DevOps
-
-The Expense Tracker application was deployed using AWS cloud infrastructure, Infrastructure as Code (IaC), containerization and automated CI/CD pipelines.
+A full-stack Expense Tracker application independently designed and developed using React.js, Node.js, Express.js, and MySQL. Features secure JWT authentication, Google OAuth 2.0, expense and budget management, interactive financial dashboards, and PDF/Excel reporting. Deployed on AWS using Docker, Amazon ECS, ECR, RDS, S3, CloudFront, Terraform, and GitHub Actions CI/CD.
 
 ## Application Architecture
 
